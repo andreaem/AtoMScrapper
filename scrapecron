@@ -1,0 +1,4 @@
+
+
+#do a daily scrape at 1 am of the discover archives website
+05 1 * * *   root    /home/maximus/xml/import.sh 
