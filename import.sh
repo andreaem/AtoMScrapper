@@ -3,6 +3,7 @@
 
 localDir="/home/maximus/xml"
 
+php $localDir/scrapeFonds.php 
 
 #close STDOUT file descriptor
 #exec 1<&-
@@ -22,35 +23,12 @@ echo "######## SCRAPING FONDS FROM EXTERNAL ATOM SITE ########"
 IFS=$'\n'       # make newlines the only separator
 set -f          # disable globbing
 
-t=0
 
-
-
-for i in $(cat < $localDir/fondsstatic); do
-   echo "scraping $i"
-   curl -f -L -s -S -o $localDir/scrape/$t.xml  "$i"
-   t=$[$t+1]
-   max_itter=0
-   response=$?
-
-   #Try 4 times to re load
-   while [ $response != 0 -a $max_itter -lt 4 ]
-   do
-      sleep 40s
-      echo "---------- Failed with curl error $response fonds $i trying again -----------"
-      curl -f -L -s -S -o $localDir/scrape/$i.xml  "$i"
-      response=$?
-      max_itter=$[$max_itter+1]
-   done
-done
-
-
-
-for i in $(cat < $localDir/fonds); do
+for i in $(cat < $localDir/fonds.txt); do
    echo "scraping fonds $i"
    
    max_itter=0
-   sleep 10s
+   sleep 1s
    
    #If the EAD files are cached you have to find the heading
    EADurl=$(curl https://discoverarchives.library.utoronto.ca/index.php/$i | grep -o 'https://discoverarchives.library.utoronto.ca/downloads/exports/ead/[a-zA-Z0-9\.]*')
@@ -65,7 +43,7 @@ for i in $(cat < $localDir/fonds); do
    #Try 4 times to re load
    while [ $response != 0 -a $max_itter -lt 4 ]
    do      
-      sleep 40s
+      sleep 10s
       echo "---------- Failed with curl error $response fonds $i trying again -----------"
       curl -f -L -s -S -o $localDir/scrape/$i.xml  "https://discoverarchives.library.utoronto.ca/index.php/$i;ead?sf_format=xml"
       response=$?
@@ -79,7 +57,7 @@ echo "########## FINISHED SCRAPING FONDS ##########"
 #this is a failsafe to ensure the right number of files are there after scrape before purging the db
 numFiles=$(find $localDir/scrape/ -type f | wc -l)
 
-if [ "$numFiles" != "173" ]
+if [ "$numFiles" != "$(wc -l fonds.txt)" ]
 then
    echo "######## THERE ARE NOT 173 COLLECTIONS SCRAPED ########"
 fi
